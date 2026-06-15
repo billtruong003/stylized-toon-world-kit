@@ -1,0 +1,44 @@
+# ============================================================
+#  Unity / Stylized Toon World Kit — .gitignore
+# ============================================================
+# Repo này chỉ chứa SOURCE của kit (Assets/StylizedToonWorldKit/...).
+# Không commit thư mục Unity sinh tự động hay project test cục bộ.
+
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# Unity generated
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Asset meta cho thư mục bị ignore
+/[Aa]ssets/AssetStoreTools*
+crashlytics-build.properties
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vs/
+.idea/
+.vscode/
+
+# Test project cục bộ (nếu tạo để verify compile, đừng push)
+/_TestProject/
+/lucy-notes/
