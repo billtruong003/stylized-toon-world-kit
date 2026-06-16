@@ -3,7 +3,7 @@
 Hand-written **HLSL** stylized / toon shader kit for **URP 17 · Unity 6 (6000.x)**.
 No Shader Graph — clean, modular, performance-first code targeting **Mobile → PC → VR**.
 
-> Status: **Sprint 0 — Foundation (P0 Core Library) ✅**. Shader packs (P1–P5) follow.
+> Status: **Sprint 1 — P1 Toon Lighting & Outline ✅** (6 shaders + SS-outline Renderer Feature, on the Sprint 0 Core base). Packs P3/P2/P4/P5 follow.
 
 ---
 
@@ -22,8 +22,20 @@ Assets/StylizedToonWorldKit/
 ├── Editor/
 │   ├── StylizedShaderGUIBase.cs # reusable ShaderGUI base (grouped foldouts, keyword toggles, render-state)
 │   └── StylizedToonTemplateGUI.cs
-└── Runtime/                     # (Renderer Feature scripts land here — e.g. SS outline in P1)
+├── Toon/                        # P1 — Toon Lighting & Outline pack (6 shaders)
+│   ├── StylizedToonLit.shader            #   flagship cel/toon lit — ramp steps OR 1D texture-ramp, colored shadow, real lights/shadow/GI, normal/spec/rim/emission keywords
+│   ├── StylizedOutline_InvertedHull.shader  #   toon lit + per-material outline (inverted hull, world/screen width) — cheap, every platform, +1 pass
+│   ├── StylizedOutline_ScreenSpace.shader   #   Hidden fullscreen blit for the SS-outline Renderer Feature (Roberts depth+normal edge), keeps scene batch
+│   ├── StylizedToonRim.shader             #   toon lit + 2-colour fresnel rim, optional light-aligned rim, additive glow
+│   ├── StylizedHairAniso.shader           #   toon lit + Kajiya-Kay dual anisotropic highlight (shift map) for anime hair
+│   └── StylizedRampLit.shader             #   1D LUT ramp lit + banded colored shadow + posterized AO (artist-driven gradients)
+└── Runtime/
+    └── ScreenSpaceOutlineFeature.cs # P1 — RenderGraph Renderer Feature driving the SS-outline shader
 ```
+
+### Outline: which variant?
+- **Inverted-Hull** (`StylizedOutline_InvertedHull`) — per-material, runs everywhere incl. mobile/VR, needs no prepass; costs **+1 draw per material** (can break batching across many materials). Best for hero objects / stylized thickness.
+- **Screen-Space** (`ScreenSpaceOutlineFeature` + Hidden shader) — **one fullscreen pass**, keeps the scene's batching, edges from depth+normal Roberts cross. Add the feature to the URP Renderer asset (don't put the shader on a material) and enable **Depth Texture**. Best for whole-scene uniform outlines. Requires U6 RenderGraph.
 
 The Core library is **not sold standalone** — it is the shared base every pack (P1 Toon/Outline,
 P2 Environment, P3 VFX, P4 Surface, P5 Anime NPR) includes, so code isn't duplicated and quality/version
@@ -96,7 +108,7 @@ Lucy's `unity-shader-version-gotchas` memo):
 | Sprint | Pack | Status |
 |---|---|---|
 | 0 | P0 Core Library (5 includes + ShaderGUI base + template) | ✅ done |
-| 1 | P1 Toon Lighting & Outline (6 shaders + SS-outline Renderer Feature) | next |
+| 1 | P1 Toon Lighting & Outline (6 shaders + SS-outline Renderer Feature) | ✅ done |
 | 2 | P3 VFX / Effects (7) | planned |
 | 3 | P2 Environment / Nature (7) | planned |
 | 4 | P4 Surface / Material (6) | planned |

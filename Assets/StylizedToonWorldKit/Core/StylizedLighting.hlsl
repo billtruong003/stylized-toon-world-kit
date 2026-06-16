@@ -29,7 +29,8 @@ struct STWToonSurface
     half3  albedo;
     half3  normalWS;     // đã normalize
     half3  viewDirWS;    // hướng tới camera (đã normalize)
-    half3  positionWS;
+    float3 positionWS;   // float: cần độ chính xác cho shadow + Forward+ cluster
+    float2 screenUV;     // normalized screen-space UV (GetNormalizedScreenSpaceUV) — Forward+ cluster cần
     half   smoothness;   // 0..1 → kích thước highlight
     half   occlusion;    // AO
     half3  emission;
@@ -145,7 +146,12 @@ half3 STW_ToonLighting(STWToonSurface s, STWToonParams p, float4 shadowCoord, ha
     // --- Additional lights (point/spot) — Forward & Forward+ cùng API ---
     uint count = STW_GetAdditionalLightsCount();
 #if USE_FORWARD_PLUS
-    // Forward+ duyệt qua cluster (URP cung cấp macro vòng lặp)
+    // Forward+ duyệt qua cluster (URP cung cấp macro vòng lặp).
+    // ⚠️ Macro LIGHT_LOOP_BEGIN tham chiếu biến tên 'inputData' để init cluster
+    // (cần normalizedScreenSpaceUV + positionWS) — PHẢI khai đúng tên này.
+    InputData inputData = (InputData)0;
+    inputData.normalizedScreenSpaceUV = s.screenUV;
+    inputData.positionWS = s.positionWS;
     LIGHT_LOOP_BEGIN(count)
         Light light = GetAdditionalLight(lightIndex, s.positionWS, shadowMask);
         half a   = light.shadowAttenuation * light.distanceAttenuation;

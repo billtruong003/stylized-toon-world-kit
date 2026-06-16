@@ -1,6 +1,6 @@
 {
   "name": "com.billtruong.stylized-toon-world-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Stylized Toon World Kit",
   "description": "Hand-written HLSL stylized/toon shader kit for URP 17 / Unity 6. Modular core library (lighting, noise, surface, outline, URP compat) + per-shader ShaderGUI. Targets Mobile, PC and VR (Single-Pass Instanced). SRP Batcher & GPU Instancing friendly.",
   "unity": "6000.0",

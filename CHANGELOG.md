@@ -2,6 +2,31 @@
 
 All notable changes to this kit are documented here.
 
+## [0.2.0] — 2026-06-16 — Sprint 1: P1 Toon Lighting & Outline Pack
+### Added
+- **6 P1 shaders** (all hand-written HLSL, point at the P0 Core; SRP-Batcher CBUFFER,
+  GPU instancing, VR single-pass-instanced, ShadowCaster + DepthNormals passes):
+  - `StylizedToonLit.shader` — flagship cel/toon lit: ramp steps **or** 1D texture-ramp
+    (`_RAMP_TEXTURE`), custom colored shadow, real main + additional (Forward+) lights, shadow, GI/SH,
+    normal-map / toon-spec / rim / emission keywords.
+  - `StylizedOutline_InvertedHull.shader` — toon lit + per-material inverted-hull outline (world/screen
+    width mode); cheap, every platform, no prepass, +1 Outline pass.
+  - `StylizedOutline_ScreenSpace.shader` (Hidden) — fullscreen blit for the SS-outline feature; Roberts
+    cross on depth + normals; one pass, keeps scene batching.
+  - `StylizedToonRim.shader` — toon lit + 2-colour fresnel rim, optional light-aligned rim, additive glow.
+  - `StylizedHairAniso.shader` — toon lit + Kajiya-Kay dual anisotropic highlight (shift map) for anime hair.
+  - `StylizedRampLit.shader` — 1D LUT ramp lit + banded colored shadow + posterized AO.
+- **Renderer Feature** `ScreenSpaceOutlineFeature.cs` — RenderGraph (`RecordRenderGraph` +
+  `RenderGraphUtils.AddBlitPass`), `ConfigureInput(Depth|Normal)`, XR-safe; drives the Hidden SS shader.
+- **Per-shader ShaderGUI** (`ToonLitGUI`, `OutlineInvertedHullGUI`, `ToonRimGUI`, `HairAnisoGUI`,
+  `RampLitGUI`) — grouped foldouts + keyword toggles on the `StylizedShaderGUIBase`.
+- README: P1 file map + "Outline: which variant?" guidance (hull vs screen-space trade-offs).
+
+### Notes
+- Targets URP 17 / Unity 6; SS-outline requires RenderGraph (U6) + Depth Texture enabled.
+- Shaders compiled "blind" (no Unity on the build host) with full static cross-checks (P0 symbol
+  resolution, CBUFFER layout, CustomEditor class match); Unity/GameCI compile verification before ship.
+
 ## [0.1.0] — 2026-06-16 — Sprint 0: Foundation (P0 Core Library)
 ### Added
 - **P0 Core Library** (5 shared HLSL includes):
