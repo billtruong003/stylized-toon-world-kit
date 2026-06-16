@@ -3,7 +3,7 @@
 Hand-written **HLSL** stylized / toon shader kit for **URP 17 · Unity 6 (6000.x)**.
 No Shader Graph — clean, modular, performance-first code targeting **Mobile → PC → VR**.
 
-> Status: **Sprint 2 — P3 VFX / Effects ✅** (7 shaders on the new `StylizedVFX.hlsl` base) — on top of Sprint 1 (P1 Toon/Outline, 6 shaders + SS-outline feature) and Sprint 0 (P0 Core). Packs P2/P4/P5 follow.
+> Status: **Sprint 3 — P2 Environment / Nature ✅** (7 shaders: Water, Ocean, Grass, Tree, Sky, Terrain, Waterfall) — on top of Sprint 2 (P3 VFX, 7), Sprint 1 (P1 Toon/Outline, 6 + SS-outline feature) and Sprint 0 (P0 Core). Packs P4/P5 follow.
 
 ---
 
@@ -32,14 +32,22 @@ Assets/StylizedToonWorldKit/
 │   └── StylizedRampLit.shader             #   1D LUT ramp lit + banded colored shadow + posterized AO (artist-driven gradients)
 ├── Runtime/
 │   └── ScreenSpaceOutlineFeature.cs # P1 — RenderGraph Renderer Feature driving the SS-outline shader
-└── VFX/                         # P3 — VFX / Effects pack (7 shaders, on StylizedVFX.hlsl)
-    ├── StylizedDissolve.shader      #   lit cutout dissolve (spawn/death) — fBm/noise-tex, UV/world, HDR edge glow, clip in shadow+depthnormals
-    ├── StylizedTeleport.shader      #   additive build-up shell — vertical reveal, front glow, scanline, fresnel
-    ├── StylizedForceField.shader    #   additive shield — fresnel + scrolling hex grid + depth-intersection glow + impact ripple
-    ├── StylizedFlame.shader         #   procedural fBm flame OR flipbook sprite-sheet — 3-stop color ramp, additive
-    ├── StylizedMagicFlow.shader     #   2-phase flow-map energy + optional polar UV (spinning magic circle)
-    ├── StylizedHologram.shader      #   alpha-blend hologram — scanlines, per-band glitch, flicker, fresnel
-    └── StylizedSlashTrail.shader    #   additive weapon trail — head→tail HDR gradient, soft edge, trim, distortion
+├── VFX/                         # P3 — VFX / Effects pack (7 shaders, on StylizedVFX.hlsl)
+│   ├── StylizedDissolve.shader      #   lit cutout dissolve (spawn/death) — fBm/noise-tex, UV/world, HDR edge glow, clip in shadow+depthnormals
+│   ├── StylizedTeleport.shader      #   additive build-up shell — vertical reveal, front glow, scanline, fresnel
+│   ├── StylizedForceField.shader    #   additive shield — fresnel + scrolling hex grid + depth-intersection glow + impact ripple
+│   ├── StylizedFlame.shader         #   procedural fBm flame OR flipbook sprite-sheet — 3-stop color ramp, additive
+│   ├── StylizedMagicFlow.shader     #   2-phase flow-map energy + optional polar UV (spinning magic circle)
+│   ├── StylizedHologram.shader      #   alpha-blend hologram — scanlines, per-band glitch, flicker, fresnel
+│   └── StylizedSlashTrail.shader    #   additive weapon trail — head→tail HDR gradient, soft edge, trim, distortion
+└── Environment/                 # P2 — Environment / Nature pack (7 shaders)
+    ├── StylizedWater.shader         #   transparent lake/river — depth-gradient color, edge foam, 2-layer flow normals, toon spec/fresnel, optional caustics (Depth Texture)
+    ├── StylizedOcean.shader         #   opaque ocean — 3 Gerstner waves (vertex displace, analytic normal), crest+shore foam, ShadowCaster matches waves
+    ├── StylizedGrass.shader         #   cutout grass cards — vertex wind sway (height-masked) + gust, root→tip gradient, back-light translucency
+    ├── StylizedTree.shader          #   cutout foliage — 2-tier wind (trunk sway + leaf flutter), vertex-color/uv mask, dithered alpha edge, translucency
+    ├── StylizedSky.shader           #   unlit DOME — 3-band day/night gradient, toon fBm clouds, sun disk+halo from main light
+    ├── StylizedTerrain.shader       #   opaque terrain — auto 3-layer blend (ground / triplanar cliff by slope / snow-sand peak by height), macro variation
+    └── StylizedWaterfall.shader     #   transparent falls — 2-layer vertical flow + distortion, top/bottom foam, fresnel, base mist soft-fade (Depth Texture)
 ```
 
 ### VFX pack notes (P3)
@@ -48,6 +56,13 @@ Assets/StylizedToonWorldKit/
 - They read the **particle vertex stream** `COLOR` — drive color & alpha per-particle from a Particle System.
 - **ForceField** intersection glow and **soft-particle** fades need URP **Depth Texture** enabled on the Renderer.
 - Procedural modes (Flame/Dissolve/Teleport) need **no textures**; Flame/MagicFlow can switch to texture/flipbook by keyword.
+
+### Environment pack notes (P2)
+- **Water / Waterfall** are transparent (alpha-blend, ZWrite Off); their depth gradient, edge foam, caustics and base mist read the scene **Depth Texture** — enable it on the URP Renderer.
+- **Ocean** displaces vertices with 3 summed **Gerstner waves**; the `ShadowCaster` pass shares the exact displacement function (HLSLINCLUDE) so cast shadows track the waves. It is opaque and reads Depth Texture only for the shallow/deep tint.
+- **Grass / Tree** are alpha-cutout lit with **vertex wind in every pass** (ForwardLit + ShadowCaster + DepthNormals share one wind function) so shadows and SS-outline stay in sync. Grass masks bend by `uv.y`; Tree masks by `uv.y` or vertex `COLOR.a` (keyword `_VERTEXCOLOR_MASK`) and can dither its alpha edge.
+- **Sky** is **unlit** and meant for a **dome mesh** (sphere with inward-facing normals), not the Skybox material slot; it reads the scene's main Directional Light for the sun and day/night blend.
+- **Terrain** blends 3 layers automatically — ground (planar), cliff (triplanar by slope), peak snow/sand (by world height) — no splat-control texture required; tune slope/height thresholds in the GUI.
 
 ### Outline: which variant?
 - **Inverted-Hull** (`StylizedOutline_InvertedHull`) — per-material, runs everywhere incl. mobile/VR, needs no prepass; costs **+1 draw per material** (can break batching across many materials). Best for hero objects / stylized thickness.
@@ -125,8 +140,8 @@ Lucy's `unity-shader-version-gotchas` memo):
 |---|---|---|
 | 0 | P0 Core Library (5 includes + ShaderGUI base + template) | ✅ done |
 | 1 | P1 Toon Lighting & Outline (6 shaders + SS-outline Renderer Feature) | ✅ done |
-| 2 | P3 VFX / Effects (7) | planned |
-| 3 | P2 Environment / Nature (7) | planned |
+| 2 | P3 VFX / Effects (7) | ✅ done |
+| 3 | P2 Environment / Nature (7) | ✅ done |
 | 4 | P4 Surface / Material (6) | planned |
 | 5 | P5 Anime Character NPR (5) | planned |
 

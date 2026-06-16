@@ -2,6 +2,40 @@
 
 All notable changes to this kit are documented here.
 
+## [0.4.0] — 2026-06-16 — Sprint 3: P2 Environment / Nature Pack
+### Added
+- **7 P2 shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing, VR SPI):
+  - `StylizedWater.shader` — transparent lake/river: depth-gradient shallow→deep color, edge **foam**
+    (depth + scrolling noise), 2-layer **flow normals** (procedural or normal map), toon specular + horizon
+    fresnel, optional toon **caustics** (`_CAUSTIC`, voronoi in shallow water). Needs URP Depth Texture.
+  - `StylizedOcean.shader` — opaque ocean: **3 Gerstner waves** summed in the vertex stage with analytic
+    normals; **crest foam** (by displaced height) + **shore foam** (by depth); `ShadowCaster` shares the
+    exact `OceanDisplace()` (HLSLINCLUDE) so shadows track the waves; shallow/deep tint via Depth Texture.
+  - `StylizedGrass.shader` — cutout grass cards: vertex **wind sway** (height-masked by `uv.y`, bend²) +
+    slow **gust**, root→tip gradient, back-light **translucency**; wind shared across ForwardLit +
+    ShadowCaster + DepthNormals so shadow/outline stay in sync.
+  - `StylizedTree.shader` — cutout foliage: **2-tier wind** (slow trunk sway + fast leaf flutter), bend
+    mask from `uv.y` or vertex `COLOR.a` (`_VERTEXCOLOR_MASK`), **dithered alpha edge** (`_ALPHADITHER`,
+    screen-stable hash) or hard clip, leaf translucency; wind shared in all three passes.
+  - `StylizedSky.shader` — **unlit dome**: 3-band **day/night** gradient (horizon/mid/zenith, blended by
+    sun height), toon **fBm clouds** (`_CLOUDS`, 2-layer scroll + horizon band), **sun disk + halo** from
+    the scene main Directional Light. For an inward-facing sphere mesh (Cull Front), not the Skybox slot.
+  - `StylizedTerrain.shader` — opaque terrain: automatic **3-layer blend** — ground (planar) / cliff
+    (triplanar, by slope mask) / peak snow-sand (by world-height gradient, slope-biased) — plus low-freq
+    **macro variation** to break texture tiling; no splat-control map needed. Full ShadowCaster + DepthNormals.
+  - `StylizedWaterfall.shader` — transparent falls: 2-layer **vertical flow** + horizontal distortion,
+    **top/bottom foam** bands, fresnel rim, base **mist** soft-fade (Depth Texture), main-light tint.
+- **Per-shader ShaderGUI** (`WaterGUI`, `OceanGUI`, `GrassGUI`, `TreeGUI`, `SkyGUI`, `TerrainGUI`,
+  `WaterfallGUI`) — grouped foldouts + keyword toggles on `StylizedShaderGUIBase`; bumped GUI footer to 0.4.0.
+- README: P2 Environment file map + pack notes (Depth Texture, dome usage, shared-wind passes, auto-blend terrain).
+
+### Notes
+- Targets URP 17 / Unity 6. Water/Ocean/Waterfall depth effects need URP **Depth Texture** enabled.
+- Lit env shaders (Grass/Tree/Terrain) reuse `STW_ToonLighting` from P0; transparent ones reuse
+  `STW_Fresnel` / `STW_DepthFade` / noise helpers — no math duplicated.
+- Shaders compiled "blind" (no Unity on the build host) with full static cross-checks (P0 symbol
+  resolution, CBUFFER layout, property↔CBUFFER parity, CustomEditor class match); Unity/GameCI compile before ship.
+
 ## [0.3.0] — 2026-06-16 — Sprint 2: P3 VFX / Effects Pack
 ### Added
 - **`Core/StylizedVFX.hlsl`** (P0 extension) — shared base for the unlit-transparent VFX pack:
