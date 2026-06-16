@@ -3,7 +3,7 @@
 Hand-written **HLSL** stylized / toon shader kit for **URP 17 · Unity 6 (6000.x)**.
 No Shader Graph — clean, modular, performance-first code targeting **Mobile → PC → VR**.
 
-> Status: **Sprint 4 — P4 Stylized Surface / Material ✅** (6 shaders: Crystal, Ice, Liquid, Lava, Glass, Metal) — on top of Sprint 3 (P2 Environment, 7), Sprint 2 (P3 VFX, 7), Sprint 1 (P1 Toon/Outline, 6 + SS-outline feature) and Sprint 0 (P0 Core). Pack P5 (Anime NPR) follows.
+> Status: **Sprint 5 — P5 Anime Character NPR ✅** (5 shaders: Character Body, Face SDF, Hair, Eye, Skin SSS) — **all packs complete (31 shaders + P0 Core)**. Builds on Sprint 4 (P4 Surface, 6), Sprint 3 (P2 Environment, 7), Sprint 2 (P3 VFX, 7), Sprint 1 (P1 Toon/Outline, 6 + SS-outline feature) and Sprint 0 (P0 Core).
 
 ---
 
@@ -54,8 +54,20 @@ Assets/StylizedToonWorldKit/
     ├── StylizedLiquid.shader        #   transparent potion — object-Y fill level + wobble, surface band, depth gradient, rising bubbles, fresnel; two-sided
     ├── StylizedLava.shader          #   opaque magma — flow-map fBm heat, cooled crust + glowing molten cracks (HDR ramp + pulse); crust lit, lava emissive
     ├── StylizedGlass.shader         #   transparent glass — refraction (Opaque Texture) + optional frosted (5-tap blur + jitter), tint, normal map, fresnel/spec
-    └── StylizedMetal.shader         #   opaque toon metal/gold — toon lit tint + stylized SH env (toon-banded, version-safe) + stepped aniso sweep + fresnel rim
+    ├── StylizedMetal.shader         #   opaque toon metal/gold — toon lit tint + stylized SH env (toon-banded, version-safe) + stepped aniso sweep + fresnel rim
+└── Anime/                      # P5 — Anime Character NPR pack (5 shaders)
+    ├── AnimeCharacterBody.shader    #   body NPR — cel ramp + colored shadow, ILM mask (R spec / G AO), ILM-masked flat toon spec, normal/rim/emission; outline & SDF ready
+    ├── AnimeFaceSDF.shader          #   SDF face shadow — smooth nose/chin shadow sliding with the key light; head axes from transform (+Z fwd), UV mirror by right·light; GI + rim
+    ├── AnimeHair.shader             #   anime hair — cel base + dual anisotropic highlight (Kajiya-Kay) shifted by noise, highlight tinted toward base, rim; needs tangents
+    ├── AnimeEye.shader              #   multi-layer eye — sclera + parallax iris (fake corneal depth) + dilating pupil + limbal ring + procedural emissive highlight
+    └── AnimeSkinSSS.shader          #   stylized skin — fake subsurface (SSS-colored shadow + terminator scatter band) + blush mask + soft sheen + normal/rim
 ```
+
+### Anime NPR pack notes (P5)
+- **Character Body** uses an optional **ILM material mask** (`_ILM`): R drives per-region specular intensity, G is an AO/shadow term — one material can read armor/cloth/skin differently. The flat toon specular is masked by ILM.r. Full ShadowCaster + DepthNormals so it works with Inverted-Hull or Screen-Space outline.
+- **Face SDF** does **not** use N·L for the main shadow (face normals are too noisy). Author one **SDF grayscale** (lit-duration field) for light coming **from the left**; the shader compares it to a threshold derived from `forward·light` and mirrors UV.x by the sign of `right·light` (`_SDF_FLIP` to invert). Head **forward = +Z, right = +X** are taken from the object transform, so the face mesh must face +Z with no skewed scale. Additional lights are intentionally skipped (faces follow the key light).
+- **Anime Hair / Eye** need **tangents** (Eye also wants UVs centered at 0.5,0.5). Eye iris depth fakes the cornea via `STW_ParallaxOffset` in tangent space; the corneal highlight is emissive (ignores shadow).
+- **Skin SSS** colors the banded shadow with the SSS tint and adds a **terminator scatter** band (`saturate(1-|N·L|/width)`) for the under-skin glow; `_BLUSH` tints cheeks by a mask. All P5 lighting reuses P0 — no math duplicated.
 
 ### VFX pack notes (P3)
 - All P3 shaders are **unlit transparent** except **Dissolve** (lit cutout, full ShadowCaster + DepthNormals).
@@ -156,9 +168,9 @@ Lucy's `unity-shader-version-gotchas` memo):
 | 2 | P3 VFX / Effects (7) | ✅ done |
 | 3 | P2 Environment / Nature (7) | ✅ done |
 | 4 | P4 Surface / Material (6) | ✅ done |
-| 5 | P5 Anime Character NPR (5) | planned |
+| 5 | P5 Anime Character NPR (5) | ✅ done |
 
-**Total target:** 31 shaders + 5 core includes + Renderer Feature(s).
+**Total:** 31 shaders + 5 core includes + Renderer Feature(s) — **all packs complete**.
 
 ---
 

@@ -2,6 +2,39 @@
 
 All notable changes to this kit are documented here.
 
+## [0.6.0] — 2026-06-16 — Sprint 5: P5 Anime Character NPR Pack
+### Added
+- **5 P5 Anime NPR shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing,
+  VR SPI; all opaque with full ShadowCaster + DepthNormals):
+  - `AnimeCharacterBody.shader` — body NPR: cel ramp + colored shadow, optional **ILM material mask**
+    (`_ILM`, R = per-region specular intensity, G = AO) à la Genshin/Honkai, ILM-masked flat toon
+    specular, normal map, rim, emission. Outline/SDF-ready (DepthNormals + ShadowCaster).
+  - `AnimeFaceSDF.shader` — **SDF face shadow**: smooth nose/chin/hair shadow that slides as the key
+    light rotates, driven by an SDF grayscale (authored for light-from-left) compared to a threshold from
+    the angle between head-forward and light. Head axes auto-derived from object transform (+Z fwd, +X
+    right); UV mirrored by sign of right·light (`_SDF_FLIP` override). Main-light shadow + GI + rim.
+  - `AnimeHair.shader` — anime hair: cel base + dual **anisotropic** highlight (Kajiya-Kay via P0
+    `STW_AnisoSpecular`) shifted by a noise map, highlight color blended toward base (`_HighlightTintBlend`),
+    rim. Needs tangents (UV combed along strands).
+  - `AnimeEye.shader` — multi-layer eye: sclera + **parallax iris** (P0 `STW_ParallaxOffset`, tangent-space
+    view → fake corneal depth) + dilating pupil + limbal ring (radial UV masks) + procedural emissive
+    **corneal highlight** (pos/size adjustable); light toon shading + GI.
+  - `AnimeSkinSSS.shader` — stylized skin: **fake subsurface** (colored banded shadow = SSS tint +
+    terminator scatter band `saturate(1-|N·L|/width)`), optional **blush** mask (`_BLUSH`), soft sheen,
+    normal map, rim.
+- **Per-shader ShaderGUI** (`AnimeBodyGUI`, `FaceSDFGUI`, `AnimeHairGUI`, `AnimeEyeGUI`, `AnimeSkinGUI`) —
+  grouped foldouts + keyword toggles on `StylizedShaderGUIBase`; bumped GUI footer + package to 0.6.0.
+- README: P5 Anime file map + pack notes; roadmap row 5 → done.
+
+### Notes
+- Targets URP 17 / Unity 6. All reuse P0 (`STW_ToonLighting` / `STW_AnisoSpecular` / `STW_ParallaxOffset` /
+  `STW_Fresnel` / `STW_ToonSpecular`) — no lighting math duplicated. Face SDF skips additional lights by
+  design (faces follow the key light); document in GUI HelpBox.
+- Face shader requires the face mesh to face +Z (no skewed scale); eye/hair need tangents.
+- Shaders compiled "blind" (no Unity on the build host) with full static cross-checks (P0 symbol resolution
+  by transitive include, CBUFFER layout, property↔CBUFFER parity incl. Toggle-keyword exclusion, CustomEditor
+  class match, GUI prop-ref match, brace/paren balance); Unity/GameCI compile before ship.
+
 ## [0.5.0] — 2026-06-16 — Sprint 4: P4 Stylized Surface / Material Pack
 ### Added
 - **6 P4 shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing, VR SPI):
