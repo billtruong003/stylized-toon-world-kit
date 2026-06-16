@@ -3,7 +3,7 @@
 Hand-written **HLSL** stylized / toon shader kit for **URP 17 · Unity 6 (6000.x)**.
 No Shader Graph — clean, modular, performance-first code targeting **Mobile → PC → VR**.
 
-> Status: **Sprint 1 — P1 Toon Lighting & Outline ✅** (6 shaders + SS-outline Renderer Feature, on the Sprint 0 Core base). Packs P3/P2/P4/P5 follow.
+> Status: **Sprint 2 — P3 VFX / Effects ✅** (7 shaders on the new `StylizedVFX.hlsl` base) — on top of Sprint 1 (P1 Toon/Outline, 6 shaders + SS-outline feature) and Sprint 0 (P0 Core). Packs P2/P4/P5 follow.
 
 ---
 
@@ -18,6 +18,7 @@ Assets/StylizedToonWorldKit/
 │   ├── StylizedNoise.hlsl       #   hash, value/gradient/voronoi noise, fBm, panner, flow-map
 │   ├── StylizedSurface.hlsl     #   triplanar, height/slope gradient, depth-fade, screen UV, parallax
 │   ├── OutlineCommon.hlsl       #   inverted-hull (world/screen) + screen-space Roberts edge helpers
+│   ├── StylizedVFX.hlsl         #   P3 base: VFXAttributes/Varyings + STW_VFXVert + fresnel/scanline/hex/polar/soft-particle
 │   └── StylizedToon_Template.shader  # reference shader showing all conventions (copy this pattern)
 ├── Editor/
 │   ├── StylizedShaderGUIBase.cs # reusable ShaderGUI base (grouped foldouts, keyword toggles, render-state)
@@ -29,9 +30,24 @@ Assets/StylizedToonWorldKit/
 │   ├── StylizedToonRim.shader             #   toon lit + 2-colour fresnel rim, optional light-aligned rim, additive glow
 │   ├── StylizedHairAniso.shader           #   toon lit + Kajiya-Kay dual anisotropic highlight (shift map) for anime hair
 │   └── StylizedRampLit.shader             #   1D LUT ramp lit + banded colored shadow + posterized AO (artist-driven gradients)
-└── Runtime/
-    └── ScreenSpaceOutlineFeature.cs # P1 — RenderGraph Renderer Feature driving the SS-outline shader
+├── Runtime/
+│   └── ScreenSpaceOutlineFeature.cs # P1 — RenderGraph Renderer Feature driving the SS-outline shader
+└── VFX/                         # P3 — VFX / Effects pack (7 shaders, on StylizedVFX.hlsl)
+    ├── StylizedDissolve.shader      #   lit cutout dissolve (spawn/death) — fBm/noise-tex, UV/world, HDR edge glow, clip in shadow+depthnormals
+    ├── StylizedTeleport.shader      #   additive build-up shell — vertical reveal, front glow, scanline, fresnel
+    ├── StylizedForceField.shader    #   additive shield — fresnel + scrolling hex grid + depth-intersection glow + impact ripple
+    ├── StylizedFlame.shader         #   procedural fBm flame OR flipbook sprite-sheet — 3-stop color ramp, additive
+    ├── StylizedMagicFlow.shader     #   2-phase flow-map energy + optional polar UV (spinning magic circle)
+    ├── StylizedHologram.shader      #   alpha-blend hologram — scanlines, per-band glitch, flicker, fresnel
+    └── StylizedSlashTrail.shader    #   additive weapon trail — head→tail HDR gradient, soft edge, trim, distortion
 ```
+
+### VFX pack notes (P3)
+- All P3 shaders are **unlit transparent** except **Dissolve** (lit cutout, full ShadowCaster + DepthNormals).
+  Each exposes `_SrcBlend/_DstBlend/_ZWrite/_Cull` (default **additive**; Hologram defaults to alpha-blend).
+- They read the **particle vertex stream** `COLOR` — drive color & alpha per-particle from a Particle System.
+- **ForceField** intersection glow and **soft-particle** fades need URP **Depth Texture** enabled on the Renderer.
+- Procedural modes (Flame/Dissolve/Teleport) need **no textures**; Flame/MagicFlow can switch to texture/flipbook by keyword.
 
 ### Outline: which variant?
 - **Inverted-Hull** (`StylizedOutline_InvertedHull`) — per-material, runs everywhere incl. mobile/VR, needs no prepass; costs **+1 draw per material** (can break batching across many materials). Best for hero objects / stylized thickness.

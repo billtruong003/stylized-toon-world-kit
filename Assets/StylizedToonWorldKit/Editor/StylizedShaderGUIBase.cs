@@ -32,7 +32,7 @@ namespace StylizedToonWorldKit.Editor
     public abstract class StylizedShaderGUIBase : ShaderGUI
     {
         protected const string KitName = "Stylized Toon World Kit";
-        protected const string KitVersion = "0.1.0";
+        protected const string KitVersion = "0.3.0";
 
         // Trạng thái foldout lưu theo tên group (giữ giữa các lần repaint).
         private static readonly Dictionary<string, bool> s_Foldouts = new Dictionary<string, bool>();
@@ -127,6 +127,21 @@ namespace StylizedToonWorldKit.Editor
                 me.EnableInstancingField();
                 me.DoubleSidedGIField();
             }
+            EndGroup();
+        }
+
+        // -- BLEND STATE (cho VFX trong suốt) ------------------------------------------
+        //  Vẽ nhóm điều khiển blend/zwrite/cull. blend=false (shader opaque) chỉ vẽ Cull.
+        protected void DrawBlendStateGroup(MaterialEditor me, MaterialProperty[] ps, bool blend)
+        {
+            BeginGroup("Render State");
+            if (blend)
+            {
+                DrawProp(me, ps, "_SrcBlend");
+                DrawProp(me, ps, "_DstBlend");
+                DrawProp(me, ps, "_ZWrite");
+            }
+            DrawProp(me, ps, "_Cull");
             EndGroup();
         }
 

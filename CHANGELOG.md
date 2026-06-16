@@ -2,6 +2,39 @@
 
 All notable changes to this kit are documented here.
 
+## [0.3.0] — 2026-06-16 — Sprint 2: P3 VFX / Effects Pack
+### Added
+- **`Core/StylizedVFX.hlsl`** (P0 extension) — shared base for the unlit-transparent VFX pack:
+  common `VFXAttributes`/`VFXVaryings` (with particle vertex `COLOR`), a single reusable vertex stage
+  `STW_VFXVert` (world pos, view dir, screen pos, fog, VR Single-Pass-Instanced), plus helpers
+  `STW_FresnelVFX`, `STW_Scanline`, `STW_HexEdge`, `STW_PolarUV`, `STW_SoftParticle`.
+- **7 P3 shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing, VR SPI;
+  exposed `_SrcBlend/_DstBlend/_ZWrite/_Cull` render-state; particle vertex-color multiply):
+  - `StylizedDissolve.shader` — **lit cutout** toon dissolve (spawn/death): procedural fBm **or** noise
+    texture (`_NOISEMAP`), UV or world-space (`_DISSOLVE_WORLD`), HDR edge glow; clip carried into
+    ShadowCaster + DepthNormals so shadow & SS-outline dissolve in sync.
+  - `StylizedTeleport.shader` — additive build-up shell: vertical reveal by UV/World-Y, front glow band,
+    scanline, energy fBm flicker, fresnel.
+  - `StylizedForceField.shader` — additive shield: fresnel rim + scrolling hex grid (`STW_HexEdge`) +
+    depth-intersection glow (`STW_SoftParticle`) + expanding world-space impact ripple.
+  - `StylizedFlame.shader` — procedural fBm flame (scroll + distortion + 3-stop ramp) **or** flipbook
+    sprite-sheet (`_FLIPBOOK`, `_Cols×_Rows×_FPS`); additive.
+  - `StylizedMagicFlow.shader` — Valve 2-phase flow-map energy + detail noise; optional polar UV
+    (`_POLAR`) for spinning magic circles; HDR low→high ramp + optional fresnel.
+  - `StylizedHologram.shader` — alpha-blend sci-fi hologram: scanlines, per-band UV glitch, global
+    flicker, fresnel rim, optional content texture.
+  - `StylizedSlashTrail.shader` — additive weapon-trail: head→tail HDR gradient, soft cross-edge,
+    head/tail trim, noise distortion (for `TrailRenderer`/ribbon meshes, `uv.x` = length).
+- **Per-shader ShaderGUI** (`DissolveGUI`, `TeleportGUI`, `ForceFieldGUI`, `FlameGUI`, `MagicFlowGUI`,
+  `HologramGUI`, `SlashTrailGUI`) — grouped foldouts + keyword toggles on `StylizedShaderGUIBase`;
+  added reusable `DrawBlendStateGroup()` to the base; bumped GUI footer version to 0.3.0.
+- README: P3 VFX file map + usage notes (Depth Texture for intersection/soft-particle; additive vs alpha).
+
+### Notes
+- Targets URP 17 / Unity 6; intersection glow & soft-particle fade need URP **Depth Texture** enabled.
+- Shaders compiled "blind" (no Unity on the build host) with full static cross-checks (P0/VFX symbol
+  resolution, CBUFFER layout, CustomEditor class match); Unity/GameCI compile verification before ship.
+
 ## [0.2.0] — 2026-06-16 — Sprint 1: P1 Toon Lighting & Outline Pack
 ### Added
 - **6 P1 shaders** (all hand-written HLSL, point at the P0 Core; SRP-Batcher CBUFFER,
