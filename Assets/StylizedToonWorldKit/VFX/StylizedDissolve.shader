@@ -47,8 +47,8 @@ Shader "StylizedToonWorldKit/VFX/Dissolve"
 
         // -------- helper include block dùng lại trong 3 pass --------
         HLSLINCLUDE
-        #include "URPCompat.hlsl"
-        #include "StylizedNoise.hlsl"
+        #include "../Core/URPCompat.hlsl"
+        #include "../Core/StylizedNoise.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
@@ -98,7 +98,7 @@ Shader "StylizedToonWorldKit/VFX/Dissolve"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -108,7 +108,7 @@ Shader "StylizedToonWorldKit/VFX/Dissolve"
             #pragma shader_feature_local _NOISEMAP
             #pragma shader_feature_local _DISSOLVE_WORLD
 
-            #include "StylizedLighting.hlsl"
+            #include "../Core/StylizedLighting.hlsl"
 
             TEXTURE2D(_BaseMap);  SAMPLER(sampler_BaseMap);
             TEXTURE2D(_NoiseMap); SAMPLER(sampler_NoiseMap);
@@ -130,7 +130,7 @@ Shader "StylizedToonWorldKit/VFX/Dissolve"
                 float3 normalWS   : TEXCOORD2;
                 float4 shadowCoord: TEXCOORD3;
                 half   fogCoord   : TEXCOORD4;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5);
                 STW_VERTEX_OUTPUT_STEREO
             };
 

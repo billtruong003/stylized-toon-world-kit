@@ -41,6 +41,7 @@ namespace StylizedToonWorldKit.Editor
         private Material _target;
         private bool _groupOpen;
         private string _currentGroup;
+        private bool _renderStateDrawn;   // tránh vẽ "Render State" 2 lần (VFX gọi DrawBlendStateGroup trong DrawProperties)
 
         // -- Entry point của ShaderGUI -------------------------------------------------
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
@@ -48,6 +49,7 @@ namespace StylizedToonWorldKit.Editor
             _editor = materialEditor;
             _props = properties;
             _target = materialEditor.target as Material;
+            _renderStateDrawn = false;
 
             DrawHeaderBar();
             EditorGUILayout.Space();
@@ -117,10 +119,15 @@ namespace StylizedToonWorldKit.Editor
             if (on) EditorGUI.indentLevel--;
         }
 
-        // -- ADVANCED (render state) ---------------------------------------------------
+        // -- ADVANCED (queue / instancing / GI) ----------------------------------------
         protected virtual void DrawAdvanced(MaterialEditor me)
         {
-            BeginGroup("Advanced / Render State");
+            // Nếu shader chưa tự vẽ Render State (qua DrawBlendStateGroup) → vẽ ở đây,
+            // để MỌI shader đều có khối Render Face / ZTest / ZWrite một cách nhất quán.
+            if (!_renderStateDrawn)
+                DrawRenderStateSection(me, _props, _target, blend: false);
+
+            BeginGroup("Advanced");
             if (_groupOpen)
             {
                 me.RenderQueueField();
@@ -130,19 +137,71 @@ namespace StylizedToonWorldKit.Editor
             EndGroup();
         }
 
-        // -- BLEND STATE (cho VFX trong suốt) ------------------------------------------
-        //  Vẽ nhóm điều khiển blend/zwrite/cull. blend=false (shader opaque) chỉ vẽ Cull.
-        protected void DrawBlendStateGroup(MaterialEditor me, MaterialProperty[] ps, bool blend)
+        // -- RENDER STATE (Render Face / ZTest / ZWrite / Blend / Two-Sided) ------------
+        //  Vẽ TUẦN TỰ; chỉ hiện property nào shader thực sự khai báo (an toàn cho mọi shader).
+        protected void DrawRenderStateSection(MaterialEditor me, MaterialProperty[] ps, Material m, bool blend)
         {
+            _renderStateDrawn = true;
             BeginGroup("Render State");
+            if (!_groupOpen) { EndGroup(); return; }
+
+            // Render Face: điều khiển _Cull. Vẽ TAY (popup) nên không bị [HideInInspector] chặn.
+            var cull = FindProperty("_Cull", ps, false);
+            if (cull != null)
+            {
+                string[] faceLabels = { "Both", "Front", "Back" };
+                int[]    faceCull   = { 0, 2, 1 };   // Both=Off(0) · Front=CullBack(2) · Back=CullFront(1)
+                int cur = Mathf.RoundToInt(cull.floatValue);
+                int idx = System.Array.IndexOf(faceCull, cur); if (idx < 0) idx = 0;
+                EditorGUI.showMixedValue = cull.hasMixedValue;
+                EditorGUI.BeginChangeCheck();
+                int sel = EditorGUILayout.Popup("Render Face", idx, faceLabels);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    me.RegisterPropertyChangeUndo("Render Face");
+                    cull.floatValue = faceCull[sel];
+                }
+                EditorGUI.showMixedValue = false;
+            }
+
             if (blend)
             {
-                DrawProp(me, ps, "_SrcBlend");
-                DrawProp(me, ps, "_DstBlend");
-                DrawProp(me, ps, "_ZWrite");
+                DrawOptionalProp(me, ps, "_SrcBlend", "Src Blend");
+                DrawOptionalProp(me, ps, "_DstBlend", "Dst Blend");
             }
-            DrawProp(me, ps, "_Cull");
+            DrawOptionalProp(me, ps, "_ZTest",  "ZTest");
+            DrawOptionalProp(me, ps, "_ZWrite", "ZWrite");
+
+            // Two-Sided back-face layer — chỉ hiện khi shader có pass tương ứng (_TwoSidedToggle).
+            var ts = FindProperty("_TwoSidedToggle", ps, false);
+            if (ts != null)
+            {
+                me.ShaderProperty(ts, "Two-Sided Layers (back-face pass)");
+                bool on = ts.floatValue > 0.5f;
+                SetKeyword(m, "_TWO_SIDED_LAYERS", on);
+                if (on)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawOptionalProp(me, ps, "_ZTestBack", "ZTest (back layer)");
+                    EditorGUI.indentLevel--;
+                }
+            }
+
             EndGroup();
+        }
+
+        // Vẽ 1 property nếu tồn tại (enum popup tự đến từ [Enum(...)] qua ShaderProperty).
+        private void DrawOptionalProp(MaterialEditor me, MaterialProperty[] ps, string name, string label)
+        {
+            var p = FindProperty(name, ps, false);
+            if (p != null) me.ShaderProperty(p, label);
+        }
+
+        // -- BLEND STATE (giữ API cũ cho các GUI VFX) ----------------------------------
+        //  Giờ ủy quyền cho DrawRenderStateSection để gồm cả Render Face / ZTest / Two-Sided.
+        protected void DrawBlendStateGroup(MaterialEditor me, MaterialProperty[] ps, bool blend)
+        {
+            DrawRenderStateSection(me, ps, _target, blend);
         }
 
         // -- HEADER / FOOTER -----------------------------------------------------------

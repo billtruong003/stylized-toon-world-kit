@@ -17,7 +17,7 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
         _GroundColor ("Ground Tint", Color) = (0.35,0.5,0.25,1)
         _GroundScale ("Ground Scale", Range(0.01,2)) = 0.2
 
-        [Header(Cliff Layer - Triplanar)][Space(4)]
+        [Header(Cliff Layer Triplanar)][Space(4)]
         _CliffMap ("Cliff Albedo", 2D) = "gray" {}
         _CliffColor ("Cliff Tint", Color) = (0.45,0.42,0.4,1)
         _CliffScale ("Cliff Scale", Range(0.01,2)) = 0.15
@@ -25,7 +25,7 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
         _SlopeSharp ("Slope Blend Sharpness", Range(0.01,1)) = 0.15
         _TriplanarSharp ("Triplanar Sharpness", Range(1,16)) = 4
 
-        [Header(Peak Layer - Snow or Sand)][Space(4)]
+        [Header(Peak Layer Snow or Sand)][Space(4)]
         [Toggle(_PEAK_LAYER)] _PeakToggle ("Enable Peak Layer", Float) = 1
         _PeakMap ("Peak Albedo", 2D) = "white" {}
         _PeakColor ("Peak Tint", Color) = (0.95,0.97,1,1)
@@ -46,7 +46,9 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
         _GIStrength ("GI Strength", Range(0,2)) = 1
         _Occlusion  ("Occlusion", Range(0,1)) = 1
 
-        [HideInInspector] _Cull ("Cull", Float) = 2
+        [HideInInspector] _Cull ("Cull", Float) = 2
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -83,7 +85,7 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
             half   _RampSmooth;
             half   _GIStrength;
             half   _Occlusion;
-            half   _Cull;
+            half   _Cull; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -94,8 +96,9 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
-
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -107,7 +110,7 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -134,7 +137,7 @@ Shader "StylizedToonWorldKit/Environment/Terrain"
                 half3  normalWS   : TEXCOORD1;
                 float4 shadowCoord: TEXCOORD2;
                 half   fogCoord   : TEXCOORD3;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 4)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 4);
                 STW_VERTEX_OUTPUT_STEREO
             };
 

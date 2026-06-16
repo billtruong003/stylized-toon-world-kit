@@ -58,9 +58,9 @@ Shader "StylizedToonWorldKit/VFX/MagicFlow"
             #pragma multi_compile_instancing
             #pragma shader_feature_local _POLAR
 
-            #include "URPCompat.hlsl"
-            #include "StylizedNoise.hlsl"
-            #include "StylizedVFX.hlsl"
+            #include "../Core/URPCompat.hlsl"
+            #include "../Core/StylizedNoise.hlsl"
+            #include "../Core/StylizedVFX.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainMap_ST;

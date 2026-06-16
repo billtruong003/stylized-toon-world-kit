@@ -37,7 +37,9 @@ Shader "StylizedToonWorldKit/Anime/Hair"
         _RimStrength ("Rim Strength", Range(0,2)) = 0.6
 
         [HideInInspector] _Cull ("Cull", Float) = 2
-        [HideInInspector] _Surface ("Surface", Float) = 0
+        [HideInInspector] _Surface ("Surface", Float) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -67,7 +69,7 @@ Shader "StylizedToonWorldKit/Anime/Hair"
             half   _RimPower;
             half   _RimStrength;
             half   _Cull;
-            half   _Surface;
+            half   _Surface; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -76,7 +78,9 @@ Shader "StylizedToonWorldKit/Anime/Hair"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -86,7 +90,7 @@ Shader "StylizedToonWorldKit/Anime/Hair"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fog
@@ -99,7 +103,7 @@ Shader "StylizedToonWorldKit/Anime/Hair"
             TEXTURE2D(_ShiftMap); SAMPLER(sampler_ShiftMap);
 
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float4 tangentOS:TANGENT; float2 uv:TEXCOORD0; float2 lightmapUV:TEXCOORD1; STW_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; float3 positionWS:TEXCOORD1; float3 normalWS:TEXCOORD2; float3 tangentWS:TEXCOORD3; float4 shadowCoord:TEXCOORD4; half fogCoord:TEXCOORD5; DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6) STW_VERTEX_OUTPUT_STEREO };
+            struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; float3 positionWS:TEXCOORD1; float3 normalWS:TEXCOORD2; float3 tangentWS:TEXCOORD3; float4 shadowCoord:TEXCOORD4; half fogCoord:TEXCOORD5; DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6); STW_VERTEX_OUTPUT_STEREO };
 
             // 1 dải aniso bậc-mềm (Kajiya-Kay) trỏ P0.
             half hairBand(half3 tangentWS, half3 lightDir, half3 viewDir, half shift, half exp)

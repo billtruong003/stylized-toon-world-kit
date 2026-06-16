@@ -35,7 +35,9 @@ Shader "StylizedToonWorldKit/Anime/Face SDF Shadow"
         [HDR] _Emission ("Emission Color", Color) = (0,0,0,0)
 
         [HideInInspector] _Cull ("Cull", Float) = 2
-        [HideInInspector] _Surface ("Surface", Float) = 0
+        [HideInInspector] _Surface ("Surface", Float) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -58,7 +60,7 @@ Shader "StylizedToonWorldKit/Anime/Face SDF Shadow"
             half   _RimStrength;
             half4  _Emission;
             half   _Cull;
-            half   _Surface;
+            half   _Surface; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -67,7 +69,9 @@ Shader "StylizedToonWorldKit/Anime/Face SDF Shadow"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -105,7 +109,7 @@ Shader "StylizedToonWorldKit/Anime/Face SDF Shadow"
                 float3 normalWS   : TEXCOORD2;
                 float4 shadowCoord: TEXCOORD3;
                 half   fogCoord   : TEXCOORD4;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5);
                 STW_VERTEX_OUTPUT_STEREO
             };
 

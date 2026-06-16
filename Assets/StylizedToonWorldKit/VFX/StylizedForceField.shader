@@ -62,8 +62,8 @@ Shader "StylizedToonWorldKit/VFX/ForceField"
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
-            #include "URPCompat.hlsl"
-            #include "StylizedVFX.hlsl"
+            #include "../Core/URPCompat.hlsl"
+            #include "../Core/StylizedVFX.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4  _FresnelColor;

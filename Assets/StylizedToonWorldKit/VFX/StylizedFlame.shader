@@ -62,9 +62,9 @@ Shader "StylizedToonWorldKit/VFX/Flame"
             #pragma multi_compile_instancing
             #pragma shader_feature_local _FLIPBOOK
 
-            #include "URPCompat.hlsl"
-            #include "StylizedNoise.hlsl"
-            #include "StylizedVFX.hlsl"
+            #include "../Core/URPCompat.hlsl"
+            #include "../Core/StylizedNoise.hlsl"
+            #include "../Core/StylizedVFX.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _FlameMap_ST;

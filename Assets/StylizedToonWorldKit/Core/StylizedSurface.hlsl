@@ -28,9 +28,9 @@
 // -----------------------------------------------------------------------------
 half4 STW_Triplanar(TEXTURE2D_PARAM(tex, samp), float3 positionWS, float3 normalWS, float scale, float blendSharpness)
 {
-    float3 uvX = positionWS.zy * scale;
-    float3 uvY = positionWS.xz * scale;
-    float3 uvZ = positionWS.xy * scale;
+    float2 uvX = positionWS.zy * scale;
+    float2 uvY = positionWS.xz * scale;
+    float2 uvZ = positionWS.xy * scale;
 
     half4 cX = SAMPLE_TEXTURE2D(tex, samp, uvX.xy);
     half4 cY = SAMPLE_TEXTURE2D(tex, samp, uvY.xy);

@@ -39,7 +39,9 @@ Shader "StylizedToonWorldKit/Anime/Eye"
         _GIStrength ("GI Strength", Range(0,2)) = 1.2
 
         [HideInInspector] _Cull ("Cull", Float) = 2
-        [HideInInspector] _Surface ("Surface", Float) = 0
+        [HideInInspector] _Surface ("Surface", Float) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -69,7 +71,7 @@ Shader "StylizedToonWorldKit/Anime/Eye"
             half   _RampSmooth;
             half   _GIStrength;
             half   _Cull;
-            half   _Surface;
+            half   _Surface; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -78,7 +80,9 @@ Shader "StylizedToonWorldKit/Anime/Eye"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -87,7 +91,7 @@ Shader "StylizedToonWorldKit/Anime/Eye"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fog
@@ -101,7 +105,7 @@ Shader "StylizedToonWorldKit/Anime/Eye"
             TEXTURE2D(_IrisMap); SAMPLER(sampler_IrisMap);
 
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float4 tangentOS:TANGENT; float2 uv:TEXCOORD0; float2 lightmapUV:TEXCOORD1; STW_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; float3 positionWS:TEXCOORD1; float3 normalWS:TEXCOORD2; float4 tangentWS:TEXCOORD3; float4 shadowCoord:TEXCOORD4; half fogCoord:TEXCOORD5; DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6) STW_VERTEX_OUTPUT_STEREO };
+            struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; float3 positionWS:TEXCOORD1; float3 normalWS:TEXCOORD2; float4 tangentWS:TEXCOORD3; float4 shadowCoord:TEXCOORD4; half fogCoord:TEXCOORD5; DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6); STW_VERTEX_OUTPUT_STEREO };
 
             Varyings vert(Attributes IN)
             {

@@ -61,9 +61,9 @@ Shader "StylizedToonWorldKit/VFX/Teleport"
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
-            #include "URPCompat.hlsl"
-            #include "StylizedNoise.hlsl"
-            #include "StylizedVFX.hlsl"
+            #include "../Core/URPCompat.hlsl"
+            #include "../Core/StylizedNoise.hlsl"
+            #include "../Core/StylizedVFX.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;

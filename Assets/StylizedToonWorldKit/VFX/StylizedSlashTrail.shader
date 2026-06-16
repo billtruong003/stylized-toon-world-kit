@@ -57,9 +57,9 @@ Shader "StylizedToonWorldKit/VFX/SlashTrail"
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
-            #include "URPCompat.hlsl"
-            #include "StylizedNoise.hlsl"
-            #include "StylizedVFX.hlsl"
+            #include "../Core/URPCompat.hlsl"
+            #include "../Core/StylizedNoise.hlsl"
+            #include "../Core/StylizedVFX.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;

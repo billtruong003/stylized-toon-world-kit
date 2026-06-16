@@ -44,7 +44,9 @@ Shader "StylizedToonWorldKit/Environment/Ocean"
         _FresnelPower ("Fresnel Power", Range(0.2,8)) = 4
         _FresnelStrength ("Fresnel Strength", Range(0,2)) = 0.7
 
-        [HideInInspector] _Cull ("Cull", Float) = 2
+        [HideInInspector] _Cull ("Cull", Float) = 2
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -79,7 +81,7 @@ Shader "StylizedToonWorldKit/Environment/Ocean"
             half4  _FresnelColor;
             half   _FresnelPower;
             half   _FresnelStrength;
-            half   _Cull;
+            half   _Cull; half _ZTest; half _ZWrite;
         CBUFFER_END
 
         // Một sóng Gerstner: dịch vị trí + cộng dồn tangent/binormal để ra normal.
@@ -127,8 +129,9 @@ Shader "StylizedToonWorldKit/Environment/Ocean"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
-
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -138,7 +141,7 @@ Shader "StylizedToonWorldKit/Environment/Ocean"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 

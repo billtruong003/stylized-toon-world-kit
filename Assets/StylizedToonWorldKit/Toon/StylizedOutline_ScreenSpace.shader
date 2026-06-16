@@ -37,9 +37,11 @@ Shader "Hidden/StylizedToonWorldKit/Screen-Space Outline"
             #pragma vertex   Vert
             #pragma fragment frag
 
-            // Blit.hlsl: cung cấp Vert/Varyings fullscreen + _BlitTexture + sampler_LinearClamp
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Blit.hlsl"
+            // Core.hlsl phải đứng TRƯỚC Blit.hlsl: nó định nghĩa TEXTURE2D_X / SAMPLE_TEXTURE2D_X
+            // (texture XR macros) mà Blit.hlsl dùng bên trong — đảo thứ tự sẽ lỗi 'unrecognized TEXTURE2D_X'.
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            // Blit.hlsl: cung cấp Vert/Varyings fullscreen + _BlitTexture + sampler_LinearClamp
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
 

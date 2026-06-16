@@ -13,11 +13,11 @@ Shader "StylizedToonWorldKit/Environment/Sky"
 {
     Properties
     {
-        [Header(Sky Gradient - Day)][Space(4)]
+        [Header(Sky Gradient Day)][Space(4)]
         [HDR] _HorizonDay ("Horizon (Day)", Color) = (0.85,0.9,1,1)
         [HDR] _MidDay     ("Mid (Day)", Color)     = (0.4,0.65,1,1)
         [HDR] _ZenithDay  ("Zenith (Day)", Color)  = (0.15,0.35,0.85,1)
-        [Header(Sky Gradient - Night)][Space(4)]
+        [Header(Sky Gradient Night)][Space(4)]
         [HDR] _HorizonNight ("Horizon (Night)", Color) = (0.1,0.12,0.22,1)
         [HDR] _MidNight     ("Mid (Night)", Color)     = (0.04,0.05,0.13,1)
         [HDR] _ZenithNight  ("Zenith (Night)", Color)  = (0.01,0.01,0.05,1)

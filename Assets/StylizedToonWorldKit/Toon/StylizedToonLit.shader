@@ -51,7 +51,9 @@ Shader "StylizedToonWorldKit/Toon/Toon Lit"
 
         // Render state (ShaderGUI Advanced)
         [HideInInspector] _Cull ("Cull", Float) = 2
-        [HideInInspector] _Surface ("Surface", Float) = 0
+        [HideInInspector] _Surface ("Surface", Float) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -80,7 +82,7 @@ Shader "StylizedToonWorldKit/Toon/Toon Lit"
             float4 _EmissionMap_ST;
             half4  _Emission;
             half   _Cull;
-            half   _Surface;
+            half   _Surface; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -91,8 +93,9 @@ Shader "StylizedToonWorldKit/Toon/Toon Lit"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
-
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -109,7 +112,7 @@ Shader "StylizedToonWorldKit/Toon/Toon Lit"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -143,7 +146,7 @@ Shader "StylizedToonWorldKit/Toon/Toon Lit"
                 float4 tangentWS  : TEXCOORD3;   // xyz tangent, w sign
                 float4 shadowCoord: TEXCOORD4;
                 half   fogCoord   : TEXCOORD5;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 6);
                 STW_VERTEX_OUTPUT_STEREO
             };
 

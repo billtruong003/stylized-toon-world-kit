@@ -44,7 +44,9 @@ Shader "StylizedToonWorldKit/Surface/Ice"
         _SpecStrength ("Specular Strength", Range(0,4)) = 1.2
         _SpecSize     ("Specular Size", Range(0,1)) = 0.12
 
-        [HideInInspector] _Cull ("Cull", Float) = 2
+        [HideInInspector] _Cull ("Cull", Float) = 2
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
     }
 
     SubShader
@@ -74,7 +76,7 @@ Shader "StylizedToonWorldKit/Surface/Ice"
             half   _FrostStrength;
             half   _SpecStrength;
             half   _SpecSize;
-            half   _Cull;
+            half   _Cull; half _ZTest; half _ZWrite;
         CBUFFER_END
         ENDHLSL
 
@@ -85,8 +87,9 @@ Shader "StylizedToonWorldKit/Surface/Ice"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
-
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
             HLSLPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
@@ -98,7 +101,7 @@ Shader "StylizedToonWorldKit/Surface/Ice"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -128,7 +131,7 @@ Shader "StylizedToonWorldKit/Surface/Ice"
                 float3 normalWS   : TEXCOORD2;
                 float4 shadowCoord: TEXCOORD3;
                 half   fogCoord   : TEXCOORD4;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5);
                 STW_VERTEX_OUTPUT_STEREO
             };
 

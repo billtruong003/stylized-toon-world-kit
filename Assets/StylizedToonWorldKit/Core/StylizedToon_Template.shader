@@ -29,9 +29,14 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
         _GIStrength   ("GI Strength", Range(0,2)) = 1.0
         [HDR] _Emission ("Emission", Color) = (0,0,0,0)
 
-        // Render state (lộ ra ShaderGUI Advanced)
-        [HideInInspector] _Cull ("Cull", Float) = 2          // Back
+        // Render state (lộ ra ShaderGUI "Render State" — vẽ tuần tự)
+        [HideInInspector] _Cull ("Cull", Float) = 2          // Render Face (Both/Front/Back) — GUI vẽ tay
         [HideInInspector] _Surface ("Surface", Float) = 0     // Opaque
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest  ("ZTest", Float) = 4   // LEqual
+        [Enum(Off,0,On,1)]                            _ZWrite ("ZWrite", Float) = 1
+        // Lớp two-sided (back-face pass) — bật/tắt bằng keyword
+        [Toggle(_TWO_SIDED_LAYERS)] _TwoSidedToggle ("Two-Sided Layers", Float) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTestBack ("ZTest (back layer)", Float) = 4
     }
 
     SubShader
@@ -46,7 +51,9 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
         {
             Name "ForwardLit"
             Tags { "LightMode"="UniversalForward" }
-            Cull [_Cull]
+            Cull   [_Cull]
+            ZTest  [_ZTest]
+            ZWrite [_ZWrite]
 
             HLSLPROGRAM
             #pragma vertex   vert
@@ -58,7 +65,7 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile _ LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
@@ -87,6 +94,10 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
                 half4  _Emission;
                 half   _Cull;
                 half   _Surface;
+                half   _ZTest;
+                half   _ZWrite;
+                half   _TwoSidedToggle;
+                half   _ZTestBack;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);  SAMPLER(sampler_BaseMap);
@@ -108,7 +119,7 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
                 float3 normalWS   : TEXCOORD2;
                 float4 shadowCoord: TEXCOORD3;
                 half   fogCoord   : TEXCOORD4;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5)
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5);
                 STW_VERTEX_OUTPUT_STEREO
             };
 
@@ -168,6 +179,115 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
         }
 
         // ---------------------------------------------------------------------
+        //  PASS 1b — Two-Sided BACK layer (TÙY CHỌN; keyword _TWO_SIDED_LAYERS)
+        // ---------------------------------------------------------------------
+        //  Vẽ MẶT SAU như một lớp riêng (Cull Front) với ZTest/ZWrite tách biệt để
+        //  bạn tự chỉnh từng case (vd: back layer ZWrite Off cho mặt trong suốt).
+        //  • Tag "SRPDefaultUnlit" → URP vẽ THÊM pass này cạnh ForwardLit.
+        //  • ShaderLab KHÔNG strip pass theo keyword → khi tắt, vertex bị suy biến
+        //    (degenerate) nên không rasterize (zero-cost fill, vẫn tốn 1 draw).
+        //  • normal bị lật để toon shading mặt sau đúng hướng sáng.
+        // ---------------------------------------------------------------------
+        Pass
+        {
+            Name "ForwardLit_Back"
+            Tags { "LightMode"="SRPDefaultUnlit" }
+            Cull   Front
+            ZTest  [_ZTestBack]
+            ZWrite [_ZWrite]
+
+            HLSLPROGRAM
+            #pragma vertex   vertBack
+            #pragma fragment fragBack
+            #pragma target 3.0
+            #pragma shader_feature_local _TWO_SIDED_LAYERS
+
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+            #pragma instancing_options renderinglayer
+
+            #include "URPCompat.hlsl"
+            #include "StylizedLighting.hlsl"
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST; half4 _BaseColor; half4 _ShadowTint;
+                half _RampSteps; half _RampSmooth; half _ShadowThresh;
+                half _SpecStrength; half _SpecSize; half4 _RimColor;
+                half _RimPower; half _RimStrength; half _GIStrength;
+                half4 _Emission; half _Cull; half _Surface;
+                half _ZTest; half _ZWrite; half _TwoSidedToggle; half _ZTestBack;
+            CBUFFER_END
+
+            TEXTURE2D(_BaseMap);  SAMPLER(sampler_BaseMap);
+
+            struct AttributesB { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; float2 lightmapUV:TEXCOORD1; STW_VERTEX_INPUT_INSTANCE_ID };
+            struct VaryingsB
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                float3 positionWS : TEXCOORD1;
+                float3 normalWS   : TEXCOORD2;
+                float4 shadowCoord: TEXCOORD3;
+                half   fogCoord   : TEXCOORD4;
+                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 5);
+                STW_VERTEX_OUTPUT_STEREO
+            };
+
+            VaryingsB vertBack(AttributesB IN)
+            {
+                VaryingsB OUT = (VaryingsB)0;
+                STW_SETUP_INSTANCE_VERT(IN, OUT);
+            #if !defined(_TWO_SIDED_LAYERS)
+                OUT.positionCS = float4(0,0,0,1);   // suy biến → không vẽ khi keyword tắt
+                return OUT;
+            #endif
+                VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
+                VertexNormalInputs   nrm = GetVertexNormalInputs(IN.normalOS);
+                OUT.positionCS  = pos.positionCS;
+                OUT.positionWS  = pos.positionWS;
+                OUT.normalWS    = nrm.normalWS;
+                OUT.uv          = TRANSFORM_TEX(IN.uv, _BaseMap);
+                OUT.shadowCoord = STW_GetShadowCoord(pos.positionWS, pos.positionCS);
+                OUT.fogCoord    = ComputeFogFactor(pos.positionCS.z);
+                OUTPUT_LIGHTMAP_UV(IN.lightmapUV, unity_LightmapST, OUT.lightmapUV);
+                OUTPUT_SH(OUT.normalWS, OUT.vertexSH);
+                return OUT;
+            }
+
+            half4 fragBack(VaryingsB IN) : SV_Target
+            {
+                STW_SETUP_INSTANCE_FRAG(IN);
+                half4 baseTex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+
+                STWToonSurface s;
+                s.albedo     = baseTex.rgb * _BaseColor.rgb;
+                s.normalWS   = -STW_SafeNormalize(IN.normalWS);   // lật normal cho mặt sau
+                s.viewDirWS  = STW_SafeNormalize(GetWorldSpaceViewDir(IN.positionWS));
+                s.positionWS = IN.positionWS;
+                s.screenUV   = GetNormalizedScreenSpaceUV(IN.positionCS);
+                s.smoothness = _SpecSize;
+                s.occlusion  = 1.0h;
+                s.emission   = _Emission.rgb;
+
+                STWToonParams p;
+                p.shadowTint=_ShadowTint.rgb; p.rampSteps=_RampSteps; p.rampSmoothness=_RampSmooth;
+                p.shadowThreshold=_ShadowThresh; p.specularStrength=_SpecStrength; p.specularSize=_SpecSize;
+                p.rimColor=_RimColor.rgb; p.rimPower=_RimPower; p.rimStrength=_RimStrength; p.giStrength=_GIStrength;
+
+                half4 shadowMask = half4(1,1,1,1);
+                half3 color = STW_ToonLighting(s, p, IN.shadowCoord, shadowMask);
+                color = STW_ApplyFog(color, IN.fogCoord);
+                return half4(color, baseTex.a * _BaseColor.a);
+            }
+            ENDHLSL
+        }
+
+        // ---------------------------------------------------------------------
         //  PASS 2 — ShadowCaster (đổ bóng)
         // ---------------------------------------------------------------------
         Pass
@@ -190,6 +310,7 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
                 half _SpecStrength; half _SpecSize; half4 _RimColor;
                 half _RimPower; half _RimStrength; half _GIStrength;
                 half4 _Emission; half _Cull; half _Surface;
+                half _ZTest; half _ZWrite; half _TwoSidedToggle; half _ZTestBack;
             CBUFFER_END
 
             float3 _LightDirection;
@@ -250,6 +371,7 @@ Shader "StylizedToonWorldKit/Core/Toon Template"
                 half _SpecStrength; half _SpecSize; half4 _RimColor;
                 half _RimPower; half _RimStrength; half _GIStrength;
                 half4 _Emission; half _Cull; half _Surface;
+                half _ZTest; half _ZWrite; half _TwoSidedToggle; half _ZTestBack;
             CBUFFER_END
 
             struct AttributesDN { float4 positionOS:POSITION; float3 normalOS:NORMAL; STW_VERTEX_INPUT_INSTANCE_ID };
