@@ -32,7 +32,7 @@ namespace StylizedToonWorldKit.Editor
     public abstract class StylizedShaderGUIBase : ShaderGUI
     {
         protected const string KitName = "Stylized Toon World Kit";
-        protected const string KitVersion = "0.4.0";
+        protected const string KitVersion = "0.5.0";
 
         // Trạng thái foldout lưu theo tên group (giữ giữa các lần repaint).
         private static readonly Dictionary<string, bool> s_Foldouts = new Dictionary<string, bool>();

@@ -3,7 +3,7 @@
 Hand-written **HLSL** stylized / toon shader kit for **URP 17 · Unity 6 (6000.x)**.
 No Shader Graph — clean, modular, performance-first code targeting **Mobile → PC → VR**.
 
-> Status: **Sprint 3 — P2 Environment / Nature ✅** (7 shaders: Water, Ocean, Grass, Tree, Sky, Terrain, Waterfall) — on top of Sprint 2 (P3 VFX, 7), Sprint 1 (P1 Toon/Outline, 6 + SS-outline feature) and Sprint 0 (P0 Core). Packs P4/P5 follow.
+> Status: **Sprint 4 — P4 Stylized Surface / Material ✅** (6 shaders: Crystal, Ice, Liquid, Lava, Glass, Metal) — on top of Sprint 3 (P2 Environment, 7), Sprint 2 (P3 VFX, 7), Sprint 1 (P1 Toon/Outline, 6 + SS-outline feature) and Sprint 0 (P0 Core). Pack P5 (Anime NPR) follows.
 
 ---
 
@@ -40,14 +40,21 @@ Assets/StylizedToonWorldKit/
 │   ├── StylizedMagicFlow.shader     #   2-phase flow-map energy + optional polar UV (spinning magic circle)
 │   ├── StylizedHologram.shader      #   alpha-blend hologram — scanlines, per-band glitch, flicker, fresnel
 │   └── StylizedSlashTrail.shader    #   additive weapon trail — head→tail HDR gradient, soft edge, trim, distortion
-└── Environment/                 # P2 — Environment / Nature pack (7 shaders)
-    ├── StylizedWater.shader         #   transparent lake/river — depth-gradient color, edge foam, 2-layer flow normals, toon spec/fresnel, optional caustics (Depth Texture)
-    ├── StylizedOcean.shader         #   opaque ocean — 3 Gerstner waves (vertex displace, analytic normal), crest+shore foam, ShadowCaster matches waves
-    ├── StylizedGrass.shader         #   cutout grass cards — vertex wind sway (height-masked) + gust, root→tip gradient, back-light translucency
-    ├── StylizedTree.shader          #   cutout foliage — 2-tier wind (trunk sway + leaf flutter), vertex-color/uv mask, dithered alpha edge, translucency
-    ├── StylizedSky.shader           #   unlit DOME — 3-band day/night gradient, toon fBm clouds, sun disk+halo from main light
-    ├── StylizedTerrain.shader       #   opaque terrain — auto 3-layer blend (ground / triplanar cliff by slope / snow-sand peak by height), macro variation
-    └── StylizedWaterfall.shader     #   transparent falls — 2-layer vertical flow + distortion, top/bottom foam, fresnel, base mist soft-fade (Depth Texture)
+├── Environment/                 # P2 — Environment / Nature pack (7 shaders)
+│   ├── StylizedWater.shader         #   transparent lake/river — depth-gradient color, edge foam, 2-layer flow normals, toon spec/fresnel, optional caustics (Depth Texture)
+│   ├── StylizedOcean.shader         #   opaque ocean — 3 Gerstner waves (vertex displace, analytic normal), crest+shore foam, ShadowCaster matches waves
+│   ├── StylizedGrass.shader         #   cutout grass cards — vertex wind sway (height-masked) + gust, root→tip gradient, back-light translucency
+│   ├── StylizedTree.shader          #   cutout foliage — 2-tier wind (trunk sway + leaf flutter), vertex-color/uv mask, dithered alpha edge, translucency
+│   ├── StylizedSky.shader           #   unlit DOME — 3-band day/night gradient, toon fBm clouds, sun disk+halo from main light
+│   ├── StylizedTerrain.shader       #   opaque terrain — auto 3-layer blend (ground / triplanar cliff by slope / snow-sand peak by height), macro variation
+│   └── StylizedWaterfall.shader     #   transparent falls — 2-layer vertical flow + distortion, top/bottom foam, fresnel, base mist soft-fade (Depth Texture)
+└── Surface/                     # P4 — Stylized Surface / Material pack (6 shaders)
+    ├── StylizedCrystal.shader       #   transparent gem — fake refraction (Opaque Texture) + dispersion, inner glow, facet noise, HDR fresnel/spec, soft depth edges
+    ├── StylizedIce.shader           #   opaque ice/snow — toon lit + view-dependent sparkle (voronoi twinkle), depth tint (fake SSS), frost edge; full shadow/depthnormals
+    ├── StylizedLiquid.shader        #   transparent potion — object-Y fill level + wobble, surface band, depth gradient, rising bubbles, fresnel; two-sided
+    ├── StylizedLava.shader          #   opaque magma — flow-map fBm heat, cooled crust + glowing molten cracks (HDR ramp + pulse); crust lit, lava emissive
+    ├── StylizedGlass.shader         #   transparent glass — refraction (Opaque Texture) + optional frosted (5-tap blur + jitter), tint, normal map, fresnel/spec
+    └── StylizedMetal.shader         #   opaque toon metal/gold — toon lit tint + stylized SH env (toon-banded, version-safe) + stepped aniso sweep + fresnel rim
 ```
 
 ### VFX pack notes (P3)
@@ -63,6 +70,12 @@ Assets/StylizedToonWorldKit/
 - **Grass / Tree** are alpha-cutout lit with **vertex wind in every pass** (ForwardLit + ShadowCaster + DepthNormals share one wind function) so shadows and SS-outline stay in sync. Grass masks bend by `uv.y`; Tree masks by `uv.y` or vertex `COLOR.a` (keyword `_VERTEXCOLOR_MASK`) and can dither its alpha edge.
 - **Sky** is **unlit** and meant for a **dome mesh** (sphere with inward-facing normals), not the Skybox material slot; it reads the scene's main Directional Light for the sun and day/night blend.
 - **Terrain** blends 3 layers automatically — ground (planar), cliff (triplanar by slope), peak snow/sand (by world height) — no splat-control texture required; tune slope/height thresholds in the GUI.
+
+### Surface pack notes (P4)
+- **Crystal / Glass** fake refraction by offsetting the **scene-color (Opaque Texture)** along the view-space normal — enable URP **Opaque Texture** on the Renderer. Crystal's soft edges also read the **Depth Texture**. Crystal's `_DISPERSION` splits R/G/B for a rainbow rim; Glass's `_FROSTED` does a 5-tap scene blur + noise jitter for frosted glass.
+- **Ice / Lava / Metal** are **opaque** and lit through `STW_ToonLighting` (P0), with full **ShadowCaster + DepthNormals** so they cast shadows and work with SS-outline/SSAO. Ice sparkle is view-dependent (voronoi glints + per-cell twinkle); Lava's crust is lit while the molten cracks are **emissive** (HDR, pulses).
+- **Liquid** is a two-sided in-bottle volume: it **clips by object-space Y** (`_FillLevel`) with a sin wobble for a fill line, and flips back-face normals via the portable `IS_FRONT_VFACE` macro. Put it on the inner liquid mesh.
+- **Metal** fakes a stylized environment with `SampleSH(reflectVector)` toon-banded — deliberately **not** `GlossyEnvironmentReflection`, so it compiles unchanged across URP 12/14/17; it stays cheap and reflection-probe-independent.
 
 ### Outline: which variant?
 - **Inverted-Hull** (`StylizedOutline_InvertedHull`) — per-material, runs everywhere incl. mobile/VR, needs no prepass; costs **+1 draw per material** (can break batching across many materials). Best for hero objects / stylized thickness.
@@ -142,7 +155,7 @@ Lucy's `unity-shader-version-gotchas` memo):
 | 1 | P1 Toon Lighting & Outline (6 shaders + SS-outline Renderer Feature) | ✅ done |
 | 2 | P3 VFX / Effects (7) | ✅ done |
 | 3 | P2 Environment / Nature (7) | ✅ done |
-| 4 | P4 Surface / Material (6) | planned |
+| 4 | P4 Surface / Material (6) | ✅ done |
 | 5 | P5 Anime Character NPR (5) | planned |
 
 **Total target:** 31 shaders + 5 core includes + Renderer Feature(s).

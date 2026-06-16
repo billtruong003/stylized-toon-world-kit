@@ -2,6 +2,39 @@
 
 All notable changes to this kit are documented here.
 
+## [0.5.0] — 2026-06-16 — Sprint 4: P4 Stylized Surface / Material Pack
+### Added
+- **6 P4 shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing, VR SPI):
+  - `StylizedCrystal.shader` — transparent gem: **fake refraction** (scene-color UV offset by view-space
+    normal, needs URP Opaque Texture) with optional **dispersion** (`_DISPERSION`, per-channel R/G/B split
+    → rainbow rim), inner glow by inverse-fresnel + facet noise, HDR fresnel + toon spec, soft `STW_DepthFade`
+    edges. Needs URP Opaque + Depth Texture.
+  - `StylizedIce.shader` — **opaque** ice/snow: toon-lit base (P0), view-dependent **sparkle** (`_SPARKLE`,
+    voronoi glints + per-cell twinkle), fake-subsurface **depth tint** (thick = blue, by inverse-fresnel),
+    fresnel **frost edge**; full ShadowCaster + DepthNormals.
+  - `StylizedLiquid.shader` — transparent in-bottle potion: object-Y **fill level** clip with sin **wobble**,
+    bright **surface band** at the meniscus, thickness **depth gradient**, rising **bubbles** (`_BUBBLE`,
+    voronoi), fresnel rim; two-sided with portable `IS_FRONT_VFACE` normal flip.
+  - `StylizedLava.shader` — **opaque** magma: Valve 2-phase **flow-map** fBm heat field, **crust** of cooled
+    rock with glowing molten **cracks** (HDR low→high heat ramp + pulse); crust is toon-lit, lava is emissive;
+    full ShadowCaster + DepthNormals.
+  - `StylizedGlass.shader` — transparent glass: **refraction** (Opaque Texture) + optional **frosted**
+    (`_FROSTED`, 5-tap scene blur + noise jitter), tint, optional normal map, HDR fresnel + toon spec.
+  - `StylizedMetal.shader` — **opaque** toon metal/gold: toon-lit tint + **stylized env** (SH sampled along
+    the reflect vector, toon-banded — version-safe, no `GlossyEnvironmentReflection`), stepped **anisotropic**
+    sweep highlight (`_ANISO`), HDR fresnel rim; full ShadowCaster + DepthNormals.
+- **Per-shader ShaderGUI** (`CrystalGUI`, `IceGUI`, `LiquidGUI`, `LavaGUI`, `GlassGUI`, `MetalGUI`) — grouped
+  foldouts + keyword toggles on `StylizedShaderGUIBase`; bumped GUI footer + package to 0.5.0.
+- README: P4 Surface file map + pack notes (Opaque Texture for refraction/frost, fill-level axis, version-safe env).
+
+### Notes
+- Targets URP 17 / Unity 6. Crystal/Glass refraction & frost need URP **Opaque Texture** (Crystal also Depth Texture).
+- Lit surfaces (Ice/Lava/Metal) reuse `STW_ToonLighting` from P0; refraction/fresnel/noise helpers reused —
+  no math duplicated. Metal env uses `SampleSH(reflectVector)` to stay compile-safe across URP versions.
+- Shaders compiled "blind" (no Unity on the build host) with full static cross-checks (per-shader P0 symbol
+  resolution by transitive include, CBUFFER layout, property↔CBUFFER parity, CustomEditor class match,
+  brace/paren balance); Unity/GameCI compile before ship.
+
 ## [0.4.0] — 2026-06-16 — Sprint 3: P2 Environment / Nature Pack
 ### Added
 - **7 P2 shaders** (hand-written HLSL, point at P0 Core; SRP-Batcher CBUFFER, GPU instancing, VR SPI):
